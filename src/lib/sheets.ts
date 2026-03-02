@@ -19,21 +19,67 @@ function getSheets() {
 
 const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID!;
 
+// Quote sheet names that contain spaces for the Sheets API
+function q(sheetName: string): string {
+  if (sheetName.includes(' ')) return `'${sheetName}'`;
+  return sheetName;
+}
+
+// Ensure the required tabs exist, creating/renaming as needed
+async function ensureTab(sheetName: string) {
+  const sheets = getSheets();
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  const existing = meta.data.sheets?.map((s) => s.properties?.title) || [];
+
+  if (existing.includes(sheetName)) return;
+
+  // If this is the first tab we need and there's only a default "Sheet1", rename it
+  if (sheetName === 'Raw Logs' && existing.includes('Sheet1') && existing.length <= 2) {
+    const sheet1 = meta.data.sheets?.find((s) => s.properties?.title === 'Sheet1');
+    if (sheet1?.properties?.sheetId !== undefined) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: { sheetId: sheet1.properties.sheetId, title: sheetName },
+                fields: 'title',
+              },
+            },
+          ],
+        },
+      });
+      return;
+    }
+  }
+
+  // Otherwise add a new tab
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: {
+      requests: [{ addSheet: { properties: { title: sheetName } } }],
+    },
+  });
+}
+
 export async function appendRow(sheetName: string, values: string[]) {
+  await ensureTab(sheetName);
   const sheets = getSheets();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!A:A`,
+    range: `${q(sheetName)}!A:A`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [values] },
   });
 }
 
 export async function getRows(sheetName: string, range?: string): Promise<string[][]> {
+  await ensureTab(sheetName);
   const sheets = getSheets();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: range || `${sheetName}!A:ZZ`,
+    range: range || `${q(sheetName)}!A:ZZ`,
   });
   return (res.data.values as string[][]) || [];
 }
@@ -71,12 +117,13 @@ export async function deleteRowByUuid(sheetName: string, uuid: string) {
 }
 
 export async function ensureHeaders(sheetName: string, headers: string[]) {
+  await ensureTab(sheetName);
   const rows = await getRows(sheetName);
   if (rows.length === 0) {
     const sheets = getSheets();
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A1`,
+      range: `${q(sheetName)}!A1`,
       valueInputOption: 'RAW',
       requestBody: { values: [headers] },
     });
