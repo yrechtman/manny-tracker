@@ -118,14 +118,47 @@ export async function deleteRowByUuid(sheetName: string, uuid: string) {
 
 export async function ensureHeaders(sheetName: string, headers: string[]) {
   await ensureTab(sheetName);
+  const sheets = getSheets();
   const rows = await getRows(sheetName);
+
   if (rows.length === 0) {
-    const sheets = getSheets();
+    // Empty sheet — write headers
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${q(sheetName)}!A1`,
       valueInputOption: 'RAW',
       requestBody: { values: [headers] },
     });
+    return;
   }
+
+  // Check if first row looks like a header (starts with "ID" or "id")
+  const firstCell = (rows[0][0] || '').trim().toLowerCase();
+  if (firstCell === 'id') return; // headers already exist
+
+  // Data exists without headers — insert a row at the top for headers
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  const sheet = meta.data.sheets?.find((s) => s.properties?.title === sheetName);
+  const sheetId = sheet?.properties?.sheetId;
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: {
+      requests: [
+        {
+          insertDimension: {
+            range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
+            inheritFromBefore: false,
+          },
+        },
+      ],
+    },
+  });
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${q(sheetName)}!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [headers] },
+  });
 }
