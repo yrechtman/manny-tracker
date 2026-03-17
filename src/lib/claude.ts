@@ -23,7 +23,7 @@ export async function analyzeData(
 
   const dataSnippet = JSON.stringify(simplified, null, 2);
 
-  const systemPrompt = `You are a dog behavior analyst helping track patterns for a dog named Manny. You are given behavioral tracking data over a ${dateRange} period. The data includes demand barking, reactivity, settling difficulties, noise sensitivity, medication (clomipramine and clonidine), enrichment activities, and positive moments.
+  const systemPrompt = `You are a dog behavior analyst helping track patterns for a dog named Manny. You are given behavioral tracking data over a ${dateRange} period. The data includes demand barking (intensity 1-3), reactivity (triggers and green/yellow/red intensity), medication (clomipramine and clonidine), enrichment activities, and daily notes.
 
 Analyze the data and provide:
 1. **Summary**: Brief overview of the period

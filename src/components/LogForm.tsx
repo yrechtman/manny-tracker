@@ -1,24 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { SECTIONS } from '@/config/sections.config';
 import { useLogger } from '@/hooks/useLogger';
 import { useFormState } from '@/hooks/useFormState';
 import { generateId, formatTimestamp, formatDate, formatTime } from '@/lib/utils';
 import LoggerSelector from './LoggerSelector';
-import EntryTypeSelector from './EntryTypeSelector';
 import FormSection from './FormSection';
 import SubmitButton from './SubmitButton';
 import SuccessToast from './SuccessToast';
 
 export default function LogForm() {
   const { logger, setLogger } = useLogger();
-  const [entryType, setEntryType] = useState<'Incident' | 'End of Day'>('Incident');
-  const { state, setGate, setField, reset } = useFormState(SECTIONS);
+  const { state, setGate, setField, reset, fillNormalDay } = useFormState(SECTIONS);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ time: string; entryId: string } | null>(null);
+  const [normalDayFilled, setNormalDayFilled] = useState(false);
+  const notesRef = useRef<HTMLDivElement>(null);
 
   const hasAtLeastOneSection = Object.values(state).some((s) => s.active);
+
+  const handleNormalDay = () => {
+    fillNormalDay();
+    setNormalDayFilled(true);
+    // Scroll to notes after a tick so state updates render
+    setTimeout(() => {
+      notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
 
   const handleSubmit = async () => {
     if (!hasAtLeastOneSection) return;
@@ -32,7 +41,7 @@ export default function LogForm() {
       timestamp: formatTimestamp(now),
       date: formatDate(now),
       logger,
-      entryType,
+      entryType: 'Daily Log',
       sections: state,
     };
 
@@ -47,7 +56,7 @@ export default function LogForm() {
 
       setToast({ time: formatTime(now), entryId });
       reset();
-      setEntryType('Incident');
+      setNormalDayFilled(false);
     } catch {
       alert('Failed to save entry. Please try again.');
     } finally {
@@ -68,21 +77,33 @@ export default function LogForm() {
   return (
     <div className="pb-24">
       <div className="px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-gray-900 mb-4">Log Entry</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-4">Daily Log</h1>
         <LoggerSelector value={logger} onChange={setLogger} />
-        <EntryTypeSelector value={entryType} onChange={setEntryType} />
+
+        <button
+          type="button"
+          onClick={handleNormalDay}
+          className={`w-full mt-3 py-3 px-4 rounded-xl text-base font-semibold transition-colors border-2 ${
+            normalDayFilled
+              ? 'bg-green-50 border-green-300 text-green-700'
+              : 'bg-indigo-50 border-indigo-200 text-indigo-700 active:bg-indigo-100'
+          }`}
+        >
+          {normalDayFilled ? 'Normal day filled — edit below or submit' : 'Normal Day'}
+        </button>
       </div>
 
       <div className="px-4 space-y-3">
         {SECTIONS.map((section) => (
-          <FormSection
-            key={section.id}
-            config={section}
-            active={state[section.id]?.active ?? false}
-            fields={state[section.id]?.fields ?? {}}
-            onGateChange={(active) => setGate(section.id, active)}
-            onFieldChange={(fieldId, value) => setField(section.id, fieldId, value)}
-          />
+          <div key={section.id} ref={section.id === 'notes' ? notesRef : undefined}>
+            <FormSection
+              config={section}
+              active={state[section.id]?.active ?? false}
+              fields={state[section.id]?.fields ?? {}}
+              onGateChange={(active) => setGate(section.id, active)}
+              onFieldChange={(fieldId, value) => setField(section.id, fieldId, value)}
+            />
+          </div>
         ))}
       </div>
 

@@ -8,7 +8,8 @@ type FormState = Record<string, SectionData>;
 type FormAction =
   | { type: 'SET_GATE'; sectionId: string; active: boolean }
   | { type: 'SET_FIELD'; sectionId: string; fieldId: string; value: unknown }
-  | { type: 'RESET'; sections: SectionConfig[] };
+  | { type: 'RESET'; sections: SectionConfig[] }
+  | { type: 'FILL_NORMAL_DAY'; sections: SectionConfig[] };
 
 function initState(sections: SectionConfig[]): FormState {
   const state: FormState = {};
@@ -61,6 +62,31 @@ function reducer(state: FormState, action: FormAction): FormState {
       };
     case 'RESET':
       return initState(action.sections);
+    case 'FILL_NORMAL_DAY': {
+      const fresh = initState(action.sections);
+      // Demand barking: no (gate off)
+      if (fresh.demand_barking) {
+        fresh.demand_barking.active = false;
+      }
+      // Reactivity: no (gate off)
+      if (fresh.reactivity) {
+        fresh.reactivity.active = false;
+      }
+      // Medication: baseline defaults
+      if (fresh.medication) {
+        fresh.medication.active = true;
+        fresh.medication.fields.clomipramine_taken = true;
+        fresh.medication.fields.clonidine_dose = 'baseline';
+      }
+      // Enrichment & notes: active but empty
+      if (fresh.enrichment) {
+        fresh.enrichment.active = true;
+      }
+      if (fresh.notes) {
+        fresh.notes.active = true;
+      }
+      return fresh;
+    }
     default:
       return state;
   }
@@ -81,5 +107,9 @@ export function useFormState(sections: SectionConfig[]) {
     dispatch({ type: 'RESET', sections });
   }, [sections]);
 
-  return { state, setGate, setField, reset };
+  const fillNormalDay = useCallback(() => {
+    dispatch({ type: 'FILL_NORMAL_DAY', sections });
+  }, [sections]);
+
+  return { state, setGate, setField, reset, fillNormalDay };
 }

@@ -116,6 +116,27 @@ export async function deleteRowByUuid(sheetName: string, uuid: string) {
   });
 }
 
+export async function rewriteSheet(sheetName: string, allRows: string[][]) {
+  await ensureTab(sheetName);
+  const sheets = getSheets();
+
+  // Clear the sheet
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${q(sheetName)}!A:ZZ`,
+  });
+
+  // Write all rows (headers + data)
+  if (allRows.length > 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${q(sheetName)}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: allRows },
+    });
+  }
+}
+
 export async function ensureHeaders(sheetName: string, headers: string[]) {
   await ensureTab(sheetName);
   const sheets = getSheets();
