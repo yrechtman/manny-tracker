@@ -78,9 +78,10 @@ function reducer(state: FormState, action: FormAction): FormState {
         fresh.medication.fields.clomipramine_taken = true;
         fresh.medication.fields.clonidine_dose = 'baseline';
       }
-      // Enrichment & notes: active but empty
+      // Enrichment: normal level
       if (fresh.enrichment) {
         fresh.enrichment.active = true;
+        fresh.enrichment.fields.level = 'normal';
       }
       if (fresh.notes) {
         fresh.notes.active = true;

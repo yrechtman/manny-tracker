@@ -89,7 +89,7 @@ export default function LogForm() {
               : 'bg-indigo-50 border-indigo-200 text-indigo-700 active:bg-indigo-100'
           }`}
         >
-          {normalDayFilled ? 'Normal day filled — edit below or submit' : 'Normal Day'}
+          {normalDayFilled ? 'Normal routine filled — edit below or submit' : 'Normal Routine'}
         </button>
       </div>
 
