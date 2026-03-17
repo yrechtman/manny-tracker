@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Manny Tracker
 
-## Getting Started
+Daily behavior tracking app for Manny the dog. Designed for quick once-a-day logging with a "Normal Day" one-tap option.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Daily Log** — Track demand barking, reactivity, enrichment, medication, and notes
+- **Normal Day** — One tap fills routine defaults, just add notes and submit
+- **Summary** — Charts showing behavior trends over time
+- **AI Insights** — Claude-powered behavioral pattern analysis
+- **Google Sheets** — All data stored in Google Sheets for easy sharing with trainers
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 16 + React 19 + TypeScript + Tailwind CSS 4
+- Google Sheets API (database)
+- Anthropic Claude API (AI analysis)
+- Vercel (hosting, auto-deploys from main)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+1. Clone the repo
+2. `npm install`
+3. Copy `.env.local.example` to `.env.local` and fill in:
+   - `APP_PIN` — PIN for app access
+   - `GOOGLE_SERVICE_ACCOUNT_KEY` — Google service account JSON
+   - `GOOGLE_SPREADSHEET_ID` — Target spreadsheet ID
+   - `ANTHROPIC_API_KEY` — Claude API key
+4. `npm run dev`
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel. Pushing to `main` triggers auto-deploy.
