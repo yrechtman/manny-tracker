@@ -43,26 +43,14 @@ export async function GET() {
             e.sections.reactivity.fields.intensity === 'Red'
         ).length;
 
-        const settlingCount = dayEntries.filter(
-          (e) => e.sections.settling?.active
-        ).length;
-
-        const noiseCount = dayEntries.filter(
-          (e) => e.sections.noise_sensitivity?.active
-        ).length;
-
-        const goodMomentsCount = dayEntries.filter(
-          (e) => e.sections.good_moments?.active
-        ).length;
-
         const medEntries = dayEntries.filter(
-          (e) => e.sections.medication_enrichment
+          (e) => e.sections.medication
         );
         const clomipramine = medEntries.some(
-          (e) => e.sections.medication_enrichment.fields.clomipramine_taken === true
+          (e) => e.sections.medication.fields.clomipramine_taken === true
         );
         const clonidine = medEntries
-          .map((e) => e.sections.medication_enrichment.fields.clonidine_dose as string)
+          .map((e) => e.sections.medication.fields.clonidine_dose as string)
           .filter(Boolean)
           .pop() || '';
 
@@ -77,9 +65,6 @@ export async function GET() {
               : null,
           reactivityCount,
           redZoneCount,
-          settlingCount,
-          noiseCount,
-          goodMomentsCount,
           clomipramine,
           clonidine,
         };

@@ -92,8 +92,24 @@ export default function FormSection({
   onGateChange,
   onFieldChange,
 }: Props) {
-  const [expanded, setExpanded] = useState(config.defaultExpanded ?? false);
+  const [expanded, setExpanded] = useState(
+    config.defaultCollapsed ? false : (config.defaultExpanded ?? false)
+  );
   const showFields = config.alwaysVisible || active;
+
+  // Summary line for collapsed medication section
+  const getMedicationSummary = () => {
+    if (config.id !== 'medication') return null;
+    const clom = fields.clomipramine_taken;
+    const clon = fields.clonidine_dose as string;
+    if (!clom && !clon) return null;
+    const parts: string[] = [];
+    if (clom) parts.push('Clomipramine');
+    if (clon === 'baseline') parts.push('Baseline clonidine');
+    else if (clon === 'increased') parts.push('Increased clonidine');
+    else if (clon === 'skipped') parts.push('Clonidine skipped');
+    return parts.join(' + ');
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -118,6 +134,11 @@ export default function FormSection({
           {config.hasGate && active && (
             <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
               Yes
+            </span>
+          )}
+          {!expanded && getMedicationSummary() && (
+            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+              {getMedicationSummary()}
             </span>
           )}
           <svg

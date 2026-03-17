@@ -15,9 +15,6 @@ interface DaySummary {
   avgDemandBarkingIntensity: number | null;
   reactivityCount: number;
   redZoneCount: number;
-  settlingCount: number;
-  noiseCount: number;
-  goodMomentsCount: number;
   clomipramine: boolean;
   clonidine: string;
 }

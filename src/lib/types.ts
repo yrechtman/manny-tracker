@@ -31,6 +31,7 @@ export interface SectionConfig {
   gateLabel?: string;
   defaultExpanded?: boolean;
   alwaysVisible?: boolean;
+  defaultCollapsed?: boolean;
   fields: FieldConfig[];
 }
 
@@ -44,7 +45,7 @@ export interface LogEntry {
   timestamp: string;
   date: string;
   logger: 'Yoni' | 'Zoe';
-  entryType: 'Incident' | 'End of Day';
+  entryType: string;
   sections: Record<string, SectionData>;
 }
 
