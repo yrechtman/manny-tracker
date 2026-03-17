@@ -2,6 +2,9 @@
 
 Daily behavior tracking app for Manny the dog. Designed for quick once-a-day logging with a "Normal Day" one-tap option.
 
+## instructions for claude
+I NEVER UNDER ANY CIRCUMSTANCES want to have branches or PRs. I want to commit everything straight to main
+
 ## Features
 
 - **Daily Log** — Track demand barking, reactivity, enrichment, medication, and notes
