@@ -105,6 +105,8 @@ const OLD_HEADER_ALIASES: Record<string, { sectionId: string; type: 'gate' | 'fi
   'Medication & Enrichment - Clomipramine taken?': { sectionId: 'medication', type: 'field', fieldId: 'clomipramine_taken' },
   'Medication & Enrichment - Clonidine': { sectionId: 'medication', type: 'field', fieldId: 'clonidine_dose' },
   'Medication & Enrichment - Enrichment provided': { sectionId: 'enrichment', type: 'field', fieldId: 'activities' },
+  // Old enrichment label → new label
+  'Enrichment - Enrichment provided': { sectionId: 'enrichment', type: 'field', fieldId: 'activities' },
   // Old comments section → new notes section
   'Comments - Additional notes': { sectionId: 'notes', type: 'field', fieldId: 'text' },
 };

@@ -63,15 +63,28 @@ export const SECTIONS: SectionConfig[] = [
     alwaysVisible: true,
     fields: [
       {
+        id: 'level',
+        label: 'Level',
+        type: 'single_select',
+        options: [
+          { value: 'low', label: 'Low (slow feeder, lick mat)' },
+          { value: 'normal', label: 'Normal (chew, light training, nose work)' },
+          { value: 'high', label: 'High (intense training, long decompression walk)' },
+        ],
+      },
+      {
         id: 'activities',
-        label: 'Enrichment provided',
+        label: 'Activities',
         type: 'quick_tags',
         options: [
-          { value: 'puzzle_feeder', label: 'Puzzle feeder' },
-          { value: 'sniff_walk', label: 'Sniff walk' },
-          { value: 'free_work', label: 'Free work' },
+          { value: 'slow_feeder', label: 'Slow feeder' },
+          { value: 'lick_mat', label: 'Lick mat' },
+          { value: 'chew', label: 'Chew' },
+          { value: 'nose_work', label: 'Nose work' },
+          { value: 'light_training', label: 'Light training' },
+          { value: 'intense_training', label: 'Intense training' },
+          { value: 'decompression_walk', label: 'Decompression walk' },
           { value: 'frozen_kong', label: 'Frozen Kong' },
-          { value: 'training_session', label: 'Training session' },
           { value: 'other', label: 'Other' },
         ],
       },
