@@ -85,7 +85,25 @@ export const SECTIONS: SectionConfig[] = [
           { value: 'intense_training', label: 'Intense training' },
           { value: 'decompression_walk', label: 'Decompression walk' },
           { value: 'frozen_kong', label: 'Frozen Kong' },
+          { value: 'free_work', label: 'Free work' },
           { value: 'other', label: 'Other' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'training',
+    name: 'Training',
+    hasGate: false,
+    alwaysVisible: true,
+    fields: [
+      {
+        id: 'exercises',
+        label: 'Exercises',
+        type: 'quick_tags',
+        options: [
+          { value: 'thank_you', label: 'Thank you' },
+          { value: 'up_down', label: 'Up down' },
         ],
       },
     ],

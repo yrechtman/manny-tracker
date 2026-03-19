@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SECTIONS } from '@/config/sections.config';
 import { useLogger } from '@/hooks/useLogger';
 import { useFormState } from '@/hooks/useFormState';
 import { generateId, formatTimestamp, formatDate, formatTime } from '@/lib/utils';
+import { LogEntry } from '@/lib/types';
 import LoggerSelector from './LoggerSelector';
 import FormSection from './FormSection';
 import SubmitButton from './SubmitButton';
@@ -14,9 +15,23 @@ export default function LogForm() {
   const { logger, setLogger } = useLogger();
   const { state, setGate, setField, reset, fillNormalDay } = useFormState(SECTIONS);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ time: string; entryId: string } | null>(null);
+  const [toast, setToast] = useState<{
+    time: string;
+    entryId: string;
+    merged: boolean;
+    previousEntry: LogEntry | null;
+  } | null>(null);
   const [normalDayFilled, setNormalDayFilled] = useState(false);
+  const [todayHasEntry, setTodayHasEntry] = useState(false);
   const notesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const today = formatDate(new Date());
+    fetch(`/api/logs?from=${today}&to=${today}&logger=${logger}`)
+      .then((res) => res.json())
+      .then((entries: LogEntry[]) => setTodayHasEntry(entries.length > 0))
+      .catch(() => {});
+  }, [logger]);
 
   const hasAtLeastOneSection = Object.values(state).some((s) => s.active);
 
@@ -54,7 +69,14 @@ export default function LogForm() {
 
       if (!res.ok) throw new Error('Failed to save');
 
-      setToast({ time: formatTime(now), entryId });
+      const data = await res.json();
+      setToast({
+        time: formatTime(now),
+        entryId: data.id,
+        merged: data.merged ?? false,
+        previousEntry: data.previousEntry ?? null,
+      });
+      setTodayHasEntry(true);
       reset();
       setNormalDayFilled(false);
     } catch {
@@ -68,6 +90,16 @@ export default function LogForm() {
     if (!toast) return;
     try {
       await fetch(`/api/logs/${toast.entryId}`, { method: 'DELETE' });
+      if (toast.merged && toast.previousEntry) {
+        // Restore the pre-merge entry
+        await fetch('/api/logs?skipMerge=true', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(toast.previousEntry),
+        });
+      } else {
+        setTodayHasEntry(false);
+      }
     } catch {
       // silent fail on undo
     }
@@ -79,6 +111,12 @@ export default function LogForm() {
       <div className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-bold text-gray-900 mb-4">Daily Log</h1>
         <LoggerSelector value={logger} onChange={setLogger} />
+
+        {todayHasEntry && (
+          <div className="mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            Updating today&apos;s log &mdash; new data will merge with your earlier entry
+          </div>
+        )}
 
         <button
           type="button"
@@ -119,6 +157,7 @@ export default function LogForm() {
       {toast && (
         <SuccessToast
           time={toast.time}
+          merged={toast.merged}
           onUndo={handleUndo}
           onDismiss={() => setToast(null)}
         />

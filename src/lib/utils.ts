@@ -43,6 +43,14 @@ function toDisplayValue(value: unknown, field: FieldConfig): string {
   if (value === undefined || value === null || value === '') return '';
 
   if (Array.isArray(value)) {
+    // Intensity scale arrays use " | " separator (labels contain commas)
+    if (field.type === 'intensity_scale' && field.scaleLabels) {
+      const labels = value.map((v) => {
+        const idx = Number(v) - 1;
+        return field.scaleLabels![idx] || String(v);
+      });
+      return labels.join(' | ');
+    }
     const labels = value.map((v) => {
       const opt = field.options?.find((o) => o.value === v);
       return opt?.label || v;
@@ -128,6 +136,13 @@ function parseFieldValue(raw: string, field: FieldConfig): unknown {
         return opt?.value || label;
       });
     case 'intensity_scale': {
+      // Multiple incidents stored with " | " separator
+      if (raw.includes(' | ')) {
+        return raw.split(' | ').map((part) => {
+          const match = part.trim().match(/^(\d+)/);
+          return match ? Number(match[1]) : part;
+        });
+      }
       const match = raw.match(/^(\d+)/);
       return match ? Number(match[1]) : raw;
     }
@@ -145,6 +160,100 @@ function parseFieldValue(raw: string, field: FieldConfig): unknown {
 function findFieldConfig(sections: SectionConfig[], sectionId: string, fieldId: string): FieldConfig | undefined {
   const section = sections.find((s) => s.id === sectionId);
   return section?.fields.find((f) => f.id === fieldId);
+}
+
+// --- Merge helpers ---
+
+function mergeText(existing: string, incoming: string, timestamp: string): string {
+  if (!incoming) return existing;
+  if (!existing) return incoming;
+  const time = new Date(timestamp).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${existing}\n[${time}] ${incoming}`;
+}
+
+function mergeArrays(existing: unknown, incoming: unknown): unknown[] {
+  const a = Array.isArray(existing) ? existing : [];
+  const b = Array.isArray(incoming) ? incoming : [];
+  return [...new Set([...a, ...b])];
+}
+
+function mergeIntensity(existing: unknown, incoming: unknown): unknown {
+  // Normalize both to arrays, then combine
+  const a = existing == null ? [] : Array.isArray(existing) ? existing : [existing];
+  const b = incoming == null ? [] : Array.isArray(incoming) ? incoming : [incoming];
+  const combined = [...a, ...b].filter((v) => v != null && v !== '');
+  if (combined.length === 0) return null;
+  if (combined.length === 1) return combined[0];
+  return combined;
+}
+
+function hasValue(val: unknown): boolean {
+  if (val === undefined || val === null || val === '') return false;
+  if (Array.isArray(val) && val.length === 0) return false;
+  return true;
+}
+
+export function mergeLogEntries(
+  existing: LogEntry,
+  incoming: LogEntry,
+  sections: SectionConfig[]
+): LogEntry {
+  const merged: LogEntry = {
+    id: existing.id,
+    timestamp: incoming.timestamp,
+    date: existing.date,
+    logger: existing.logger,
+    entryType: existing.entryType,
+    sections: {},
+  };
+
+  for (const section of sections) {
+    const existData = existing.sections[section.id];
+    const incData = incoming.sections[section.id];
+
+    // Gate: OR — if either submission activated it, it stays active
+    const active = (existData?.active ?? false) || (incData?.active ?? false);
+
+    const fields: Record<string, unknown> = {};
+    for (const field of section.fields) {
+      const existVal = existData?.fields[field.id];
+      const incVal = incData?.fields[field.id];
+
+      // Only merge incoming if the section was active in this submission
+      const incActive = incData?.active ?? false;
+
+      switch (field.type) {
+        case 'free_text':
+          fields[field.id] = incActive
+            ? mergeText(existVal as string, incVal as string, incoming.timestamp)
+            : existVal;
+          break;
+        case 'multi_select':
+        case 'quick_tags':
+          fields[field.id] = incActive
+            ? mergeArrays(existVal, incVal)
+            : (existVal ?? []);
+          break;
+        case 'intensity_scale':
+          fields[field.id] = incActive
+            ? mergeIntensity(existVal, incVal)
+            : existVal;
+          break;
+        default:
+          // boolean, single_select: latest non-empty value wins
+          fields[field.id] = (incActive && hasValue(incVal)) ? incVal : existVal;
+          break;
+      }
+    }
+
+    merged.sections[section.id] = { active, fields };
+  }
+
+  return merged;
 }
 
 export function parseSheetRow(

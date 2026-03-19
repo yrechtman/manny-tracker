@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { appendRow, getRows, ensureHeaders, rewriteSheet } from '@/lib/sheets';
-import { flattenLogEntry, getSheetHeaders, parseSheetRow } from '@/lib/utils';
+import { appendRow, getRows, ensureHeaders, rewriteSheet, replaceRowByUuid } from '@/lib/sheets';
+import { flattenLogEntry, getSheetHeaders, parseSheetRow, mergeLogEntries } from '@/lib/utils';
 import { LogEntry } from '@/lib/types';
 import { SECTIONS } from '@/config/sections.config';
 
@@ -36,15 +36,42 @@ export async function POST(req: NextRequest) {
   try {
     const entry: LogEntry = await req.json();
     const headers = getSheetHeaders(SECTIONS);
+    const { searchParams } = new URL(req.url);
+    const skipMerge = searchParams.get('skipMerge') === 'true';
 
     // Migrate old data format if needed (one-time)
     await migrateIfNeeded(headers);
     await ensureHeaders(SHEET_NAME, headers);
 
+    // Check for existing entry for same date + logger (unless undo flow)
+    if (!skipMerge) {
+      const rows = await getRows(SHEET_NAME);
+      const sheetHeaders = rows[0] || headers;
+      const dataRows = rows.slice(1);
+
+      const existingRow = dataRows.find((row) => {
+        const parsed = parseSheetRow(row, sheetHeaders, SECTIONS);
+        return parsed.date === entry.date && parsed.logger === entry.logger;
+      });
+
+      if (existingRow) {
+        const existingEntry = parseSheetRow(existingRow, sheetHeaders, SECTIONS);
+        const merged = mergeLogEntries(existingEntry, entry, SECTIONS);
+        const row = flattenLogEntry(merged, SECTIONS);
+        await replaceRowByUuid(SHEET_NAME, existingEntry.id, row);
+        return NextResponse.json({
+          success: true,
+          id: merged.id,
+          merged: true,
+          previousEntry: existingEntry,
+        });
+      }
+    }
+
     const row = flattenLogEntry(entry, SECTIONS);
     await appendRow(SHEET_NAME, row);
 
-    return NextResponse.json({ success: true, id: entry.id });
+    return NextResponse.json({ success: true, id: entry.id, merged: false });
   } catch (error) {
     console.error('Failed to save log:', error);
     return NextResponse.json(
