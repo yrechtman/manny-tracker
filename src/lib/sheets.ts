@@ -116,6 +116,11 @@ export async function deleteRowByUuid(sheetName: string, uuid: string) {
   });
 }
 
+export async function replaceRowByUuid(sheetName: string, uuid: string, newValues: string[]) {
+  await deleteRowByUuid(sheetName, uuid);
+  await appendRow(sheetName, newValues);
+}
+
 export async function rewriteSheet(sheetName: string, allRows: string[][]) {
   await ensureTab(sheetName);
   const sheets = getSheets();

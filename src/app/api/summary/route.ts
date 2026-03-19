@@ -24,23 +24,27 @@ export async function GET() {
 
     const summaries = Object.entries(byDate)
       .map(([date, dayEntries]) => {
-        const demandBarkingCount = dayEntries.filter(
-          (e) => e.sections.demand_barking?.active
-        ).length;
+        // Flatten intensity values (could be single value or array from merged entries)
+        const flattenIntensity = (val: unknown): number[] => {
+          if (Array.isArray(val)) return val.map(Number).filter((n) => !isNaN(n));
+          const n = Number(val);
+          return isNaN(n) ? [] : [n];
+        };
 
         const demandBarkingIntensities = dayEntries
           .filter((e) => e.sections.demand_barking?.active)
-          .map((e) => Number(e.sections.demand_barking.fields.intensity))
-          .filter((n) => !isNaN(n));
+          .flatMap((e) => flattenIntensity(e.sections.demand_barking.fields.intensity));
 
-        const reactivityCount = dayEntries.filter(
+        const demandBarkingCount = demandBarkingIntensities.length;
+
+        // Reactivity intensity could be a single string or merged — count incidents
+        const reactivityEntries = dayEntries.filter(
           (e) => e.sections.reactivity?.active
-        ).length;
+        );
+        const reactivityCount = reactivityEntries.length;
 
-        const redZoneCount = dayEntries.filter(
-          (e) =>
-            e.sections.reactivity?.active &&
-            e.sections.reactivity.fields.intensity === 'Red'
+        const redZoneCount = reactivityEntries.filter(
+          (e) => e.sections.reactivity.fields.intensity === 'Red'
         ).length;
 
         const medEntries = dayEntries.filter(
