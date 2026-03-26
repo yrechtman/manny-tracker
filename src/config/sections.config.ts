@@ -100,6 +100,7 @@ export const SECTIONS: SectionConfig[] = [
         options: [
           { value: 'thank_you', label: 'Thank you' },
           { value: 'up_down', label: 'Up down' },
+          { value: 'crate_games', label: 'Crate games' },
         ],
       },
     ],
