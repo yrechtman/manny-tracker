@@ -9,7 +9,8 @@ type FormAction =
   | { type: 'SET_GATE'; sectionId: string; active: boolean }
   | { type: 'SET_FIELD'; sectionId: string; fieldId: string; value: unknown }
   | { type: 'RESET'; sections: SectionConfig[] }
-  | { type: 'FILL_NORMAL_DAY'; sections: SectionConfig[] };
+  | { type: 'FILL_NORMAL_DAY'; sections: SectionConfig[] }
+  | { type: 'LOAD_ENTRY'; sections: SectionConfig[]; data: Record<string, SectionData> };
 
 function initState(sections: SectionConfig[]): FormState {
   const state: FormState = {};
@@ -88,6 +89,15 @@ function reducer(state: FormState, action: FormAction): FormState {
       }
       return fresh;
     }
+    case 'LOAD_ENTRY': {
+      const base = initState(action.sections);
+      for (const sectionId of Object.keys(base)) {
+        if (action.data[sectionId]) {
+          base[sectionId] = action.data[sectionId];
+        }
+      }
+      return base;
+    }
     default:
       return state;
   }
@@ -112,5 +122,9 @@ export function useFormState(sections: SectionConfig[]) {
     dispatch({ type: 'FILL_NORMAL_DAY', sections });
   }, [sections]);
 
-  return { state, setGate, setField, reset, fillNormalDay };
+  const loadEntry = useCallback((data: Record<string, SectionData>) => {
+    dispatch({ type: 'LOAD_ENTRY', sections, data });
+  }, [sections]);
+
+  return { state, setGate, setField, reset, fillNormalDay, loadEntry };
 }

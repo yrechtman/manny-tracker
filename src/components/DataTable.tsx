@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { LogEntry } from '@/lib/types';
 import { SECTIONS } from '@/config/sections.config';
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function DataTable({ entries }: Props) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterLogger, setFilterLogger] = useState<string>('all');
 
@@ -90,6 +92,14 @@ export default function DataTable({ entries }: Props) {
 
               {isExpanded && (
                 <div className="px-4 pb-3 border-t border-gray-100">
+                  <div className="mt-3 mb-2 flex justify-end">
+                    <button
+                      onClick={() => router.push(`/log/edit?id=${entry.id}`)}
+                      className="px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </div>
                   {SECTIONS.map((section) => {
                     const data = entry.sections[section.id];
                     if (!data?.active && section.hasGate) return null;

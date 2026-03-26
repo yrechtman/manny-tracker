@@ -3,9 +3,10 @@
 interface Props {
   loading: boolean;
   onClick: () => void;
+  label?: string;
 }
 
-export default function SubmitButton({ loading, onClick }: Props) {
+export default function SubmitButton({ loading, onClick, label }: Props) {
   return (
     <button
       type="button"
@@ -22,7 +23,7 @@ export default function SubmitButton({ loading, onClick }: Props) {
           Saving...
         </span>
       ) : (
-        'Log Entry'
+        label || 'Log Entry'
       )}
     </button>
   );
